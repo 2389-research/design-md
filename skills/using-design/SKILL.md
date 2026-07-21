@@ -1,6 +1,6 @@
 ---
 name: using-design
-description: Use before any work that changes user-visible output — UI, styling, components, pages, terminal/CLI output, or user-facing copy — in a project that contains a DESIGN.md. Loads the design system, builds with its tokens, and self-checks the result against it before presenting. Also invoked by the design-md plugin hooks.
+description: Use before any work that changes user-visible output — UI, styling, components, pages, terminal/CLI output, or user-facing copy. If the project contains a DESIGN.md, loads it, builds with its tokens, and self-checks the result against it before presenting; if it doesn't, offers once to create one. Also invoked by the design-md plugin hooks.
 ---
 
 # using-design: Build Against DESIGN.md
@@ -39,7 +39,8 @@ this workflow.
 ## Step 3 — Self-check before presenting
 
 After building, diff your output against DESIGN.md and fix violations
-BEFORE showing the user:
+BEFORE showing the user (skip items whose sections or tokens the
+project's DESIGN.md doesn't define):
 
 - [ ] Every color used is a token (or derived per an explicit rule in
       the prose)
@@ -48,7 +49,7 @@ BEFORE showing the user:
 - [ ] Corner radii come from the rounded scale
 - [ ] Nothing violates Do's and Don'ts
 - [ ] User-facing text matches Voice & Copy
-- [ ] Terminal output matches Terminal & CLI (if applicable)
+- [ ] Terminal output matches Terminal & CLI
 
 Fix what you find. Then report in one or two lines: "Design check:
 conforms" or "Design check: 2 divergences fixed (off-scale padding,
