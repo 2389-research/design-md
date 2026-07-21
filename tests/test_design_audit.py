@@ -16,16 +16,22 @@ def make_transcript(tmp_path, entries):
     return p
 
 
-def user_msg(text):
-    return {"type": "user", "message": {"content": [{"type": "text", "text": text}]}}
+def user_msg(text, sidechain=False):
+    entry = {"type": "user", "message": {"content": [{"type": "text", "text": text}]}}
+    if sidechain:
+        entry["isSidechain"] = True
+    return entry
 
 
 def tool_result_msg():
     return {"type": "user", "message": {"content": [{"type": "tool_result", "content": "ok"}]}}
 
 
-def assistant_tool_use(name):
-    return {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": name, "input": {}}]}}
+def assistant_tool_use(name, sidechain=False):
+    entry = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": name, "input": {}}]}}
+    if sidechain:
+        entry["isSidechain"] = True
+    return entry
 
 
 def test_detects_write_tool_in_last_turn(tmp_path):
@@ -56,6 +62,26 @@ def test_tool_results_are_not_turn_boundaries(tmp_path):
         assistant_tool_use("Edit"),
         tool_result_msg(),
         assistant_tool_use("Bash"),
+    ])
+    assert design_audit.turn_modified_files(t) is True
+
+
+def test_sidechain_user_messages_are_not_turn_boundaries(tmp_path):
+    t = make_transcript(tmp_path, [
+        user_msg("change the button"),
+        assistant_tool_use("Edit"),
+        user_msg("subagent prompt", sidechain=True),
+        assistant_tool_use("Read"),
+    ])
+    assert design_audit.turn_modified_files(t) is True
+
+
+def test_sidechain_writes_count(tmp_path):
+    t = make_transcript(tmp_path, [
+        user_msg("build it"),
+        assistant_tool_use("Task"),
+        user_msg("subagent prompt", sidechain=True),
+        assistant_tool_use("Edit", sidechain=True),
     ])
     assert design_audit.turn_modified_files(t) is True
 

@@ -41,7 +41,11 @@ def turn_modified_files(transcript_path: Path) -> bool:
             entries.append(parsed)
     last_user = -1
     for i, entry in enumerate(entries):
-        if entry.get("type") == "user" and not _is_tool_result(entry):
+        if (
+            entry.get("type") == "user"
+            and not entry.get("isSidechain")
+            and not _is_tool_result(entry)
+        ):
             last_user = i
     for entry in entries[last_user + 1 :]:
         if entry.get("type") != "assistant":
