@@ -67,3 +67,13 @@ def test_silent_on_malformed_stdin(tmp_path, monkeypatch):
         [sys.executable, str(SCRIPT)], input="not json", capture_output=True, text=True
     )
     assert result.returncode == 0
+
+
+def test_silent_on_empty_payload(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".git").mkdir()
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT)], input="{}", capture_output=True, text=True
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == ""
