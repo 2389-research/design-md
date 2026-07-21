@@ -12,13 +12,18 @@ import yaml
 TOKEN_REF = re.compile(r"\{([a-zA-Z0-9_.\-]+)\}")
 
 
+FRONT_MATTER_CLOSE = re.compile(r"\n---[ \t]*(?:\r?\n|$)")
+
+
 def split_front_matter(text: str):
-    if not text.startswith("---\n"):
+    if text.startswith("---\r\n") or text.startswith("---\n"):
+        text = text.replace("\r\n", "\n")
+    else:
         return None, text
-    end = text.find("\n---", 4)
-    if end == -1:
+    match = FRONT_MATTER_CLOSE.search(text, 3)
+    if match is None:
         return None, text
-    return text[4:end], text[end + 4 :]
+    return text[4 : match.start()], text[match.end() :]
 
 
 def resolve(ref: str, data: dict) -> bool:
@@ -50,6 +55,9 @@ def validate_text(text: str) -> list[str]:
             front = yaml.safe_load(raw_front)
         except yaml.YAMLError as exc:
             issues.append(f"front matter is not valid YAML: {exc}")
+        else:
+            if not isinstance(front, dict):
+                issues.append("front matter must be a YAML mapping")
         if isinstance(front, dict):
             if not front.get("name"):
                 issues.append("front matter missing required 'name'")

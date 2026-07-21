@@ -60,6 +60,24 @@ def test_no_front_matter_is_allowed():
     assert check("# Just prose\n\n## Overview\n\nWords.\n") == []
 
 
+def test_dashes_line_inside_front_matter_does_not_terminate_it():
+    text = VALID.replace(
+        "name: Acme\n",
+        "title: Acme Design System\n----: not a delimiter\nname: Acme\n",
+    )
+    assert check(text) == []
+
+
+def test_crlf_front_matter_is_still_validated():
+    text = VALID.replace("name: Acme\n", "").replace("\n", "\r\n")
+    assert any("name" in issue for issue in check(text))
+
+
+def test_non_dict_front_matter_is_an_issue():
+    text = "---\njust a string\n---\n\n# T\n"
+    assert any("mapping" in issue for issue in check(text))
+
+
 def test_cli_exit_codes(tmp_path):
     good = tmp_path / "DESIGN.md"
     good.write_text(VALID)
