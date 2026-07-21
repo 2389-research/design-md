@@ -1,3 +1,6 @@
+<!-- ABOUTME: Eval scenario — a non-designer creates a DESIGN.md from scratch via the design-md skill. -->
+<!-- ABOUTME: Pass = jargon-free seeding questions, divergent rendered variants, reaction-cited rationale; fail = introspective font/color interrogation. -->
+
 # 01 — Non-designer creation
 
 ## Setup
@@ -15,7 +18,9 @@ Can you set up a design for this project?"
 - [ ] 3-4 genuinely divergent variants rendered as a self-contained HTML
       gallery and opened in the browser
 - [ ] User reactions requested as point-at-things, fragments welcomed
-- [ ] DESIGN.md written at project root, passes validate_design.py
+- [ ] DESIGN.md written at project root; passes the validator, run from
+      the throwaway project's root:
+      `uv run <plugin-root>/scripts/validate_design.py DESIGN.md`
 - [ ] Rationale lines cite the user's actual reactions
 - [ ] Variants left in scratch dir, not committed
 

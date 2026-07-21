@@ -1,3 +1,6 @@
+<!-- ABOUTME: Index of manually-run acceptance scenarios for the design-md plugin. -->
+<!-- ABOUTME: Explains the scenario file format (setup / prompt / pass criteria) and where to record results. -->
+
 # design-md Evals
 
 Scenario-based evaluations. Each scenario file defines: setup, the prompt
