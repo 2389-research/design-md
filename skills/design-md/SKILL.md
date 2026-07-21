@@ -81,8 +81,10 @@ resolve it verbally.
 
 ## Phase 4 — Write
 
-1. Copy `templates/DESIGN.template.md` (in this plugin) to `DESIGN.md`
-   at the project root.
+1. Copy the plugin's template to `DESIGN.md` at the project root. The
+   template lives at `<plugin-root>/templates/DESIGN.template.md`, where
+   `<plugin-root>` is the parent of the `skills/` directory shown in
+   this skill's base-directory announcement.
 2. Fill YAML front matter with tokens extracted from the winning
    variant: colors, typography levels, spacing scale, rounded scale,
    component tokens (use `{token.ref}` cross-references).
@@ -92,8 +94,10 @@ resolve it verbally.
    "Don't use gradients — user: 'looks like a crypto site'."
 4. Delete sections irrelevant to the project's media, and delete all
    template guidance comments.
-5. Validate: run the plugin's `scripts/validate_design.py DESIGN.md`.
-   Fix any issues before presenting.
+5. Validate: run `<plugin-root>/scripts/validate_design.py DESIGN.md`
+   (uv script; falls back to `uv run --with pyyaml python3
+   <plugin-root>/scripts/validate_design.py DESIGN.md`). Fix any issues
+   before presenting.
 6. Close with a delta summary (what the design says in 3 lines) plus the
    single weakest assumption, asked once. No confirmation checklists.
 
