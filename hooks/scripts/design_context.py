@@ -16,12 +16,14 @@ POINTER = (
 )
 
 CREATION_HINT = (
-    "Note: this project has no DESIGN.md. If (and only if) the current "
-    "request involves visual/UI/design work, offer once to capture design "
+    "Note (applies to this entire session, remember it): this project has "
+    "no DESIGN.md. If the current request — or ANY later request in this "
+    "session — involves visual/UI/design work, offer once to capture design "
     "intent as an enforceable DESIGN.md via the design-md skill. Whether the "
     "user accepts or declines, silence this note permanently by running: "
-    "mkdir -p {marker_dir} && touch {marker}. If the request is not design "
-    "work, ignore this note entirely and leave the marker alone."
+    "mkdir -p {marker_dir} && touch {marker}. For non-design requests, do "
+    "not mention this note or touch the marker, but keep it in mind for "
+    "later design requests."
 )
 
 
