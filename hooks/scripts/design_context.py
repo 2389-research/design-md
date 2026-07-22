@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # ABOUTME: Pre-hook for SessionStart and UserPromptSubmit: if the project has a
-# ABOUTME: DESIGN.md, inject a pointer to using-design; if not and the prompt is
-# ABOUTME: design-ish, hint once (per project, ever) that design-md can create one.
+# ABOUTME: DESIGN.md, inject a pointer to using-design; if not, inject a small
+# ABOUTME: conditional note letting the main model judge whether to offer design-md.
 import hashlib
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -16,20 +15,12 @@ POINTER = (
 )
 
 CREATION_HINT = (
-    "This project has no DESIGN.md. The current request looks like visual/UI "
-    "design work — offer once to capture design intent as an enforceable "
-    "DESIGN.md via the design-md skill. If the user declines, drop it; this "
-    "hint will not repeat."
-)
-
-DESIGN_ISH = re.compile(
-    r"\b(re)?design(ed|ing)?\b"
-    r"|\bre?styl(e|ing|ed)\b|\bstylesheet\b|\bcss\b"
-    r"|\btheme\b|\btypography\b|\bfonts?\b"
-    r"|\bcolou?r( scheme| palette)?s?\b|\bpalette\b"
-    r"|\blayout\b|\bux\b|\bui\b|\bvisual(ly)?\b|\bbranding\b"
-    r"|\blook[- ]and[- ]feel\b|\blanding page\b",
-    re.IGNORECASE,
+    "Note: this project has no DESIGN.md. If (and only if) the current "
+    "request involves visual/UI/design work, offer once to capture design "
+    "intent as an enforceable DESIGN.md via the design-md skill. Whether the "
+    "user accepts or declines, silence this note permanently by running: "
+    "mkdir -p {marker_dir} && touch {marker}. If the request is not design "
+    "work, ignore this note entirely and leave the marker alone."
 )
 
 
@@ -52,10 +43,6 @@ def find_project_root(start: Path) -> Path:
     return current
 
 
-def is_design_ish(prompt: str) -> bool:
-    return bool(DESIGN_ISH.search(prompt))
-
-
 def hint_marker(project_root: Path) -> Path:
     state_home = Path(
         os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
@@ -65,14 +52,12 @@ def hint_marker(project_root: Path) -> Path:
 
 
 def maybe_creation_hint(cwd: Path, prompt: str) -> str | None:
-    if not prompt or not is_design_ish(prompt):
+    if not prompt:
         return None
     marker = hint_marker(find_project_root(cwd))
     if marker.exists():
         return None
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.touch()
-    return CREATION_HINT
+    return CREATION_HINT.format(marker_dir=marker.parent, marker=marker)
 
 
 def main() -> None:

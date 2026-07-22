@@ -74,3 +74,7 @@ If substantial user-visible work is starting and the project has no
 DESIGN.md, offer ONCE: "This project has no DESIGN.md — want to create
 one first so this and future work stays consistent? (design-md skill,
 ~10 minutes)." If declined, proceed and do not ask again this session.
+
+If a hook note in the conversation names a silence-marker path for this
+offer, touch that marker once the offer resolves — accepted or declined —
+so the note never repeats for this project.

@@ -81,6 +81,9 @@ def test_silent_on_empty_payload(tmp_path, monkeypatch):
 
 
 # --- creation-offer hint (no DESIGN.md present) ---
+# The hook does not judge whether the prompt is design work — that judgment
+# belongs to the main model, which reads the injected note. The hook only
+# gates on: DESIGN.md absent, prompt present, marker absent.
 
 
 def run_hook_with_state(payload, state_dir):
@@ -93,37 +96,52 @@ def run_hook_with_state(payload, state_dir):
     )
 
 
-def test_design_ish_prompt_detection():
-    assert design_context.is_design_ish("make the landing page pop with a new color palette")
-    assert design_context.is_design_ish("restyle the nav CSS")
-    assert design_context.is_design_ish("pick a typography scale")
-    assert not design_context.is_design_ish("fix the failing database migration")
-    assert not design_context.is_design_ish("rename the parser module")
-
-
-def test_hints_creation_once_for_design_ish_prompt(tmp_path):
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    (repo / ".git").mkdir()
-    state = tmp_path / "state"
-    payload = {"cwd": str(repo), "prompt": "redesign the settings page layout"}
-
-    first = run_hook_with_state(payload, state)
-    assert first.returncode == 0
-    assert "design-md" in first.stdout
-    assert "DESIGN.md" in first.stdout
-
-    second = run_hook_with_state(payload, state)
-    assert second.returncode == 0
-    assert second.stdout.strip() == ""
-
-
-def test_no_hint_for_non_design_prompt(tmp_path):
+def test_hint_emitted_on_any_prompt_when_no_design_md(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
     (repo / ".git").mkdir()
     state = tmp_path / "state"
     result = run_hook_with_state({"cwd": str(repo), "prompt": "fix the CI pipeline"}, state)
+    assert result.returncode == 0
+    assert "design-md" in result.stdout
+    assert "DESIGN.md" in result.stdout
+
+
+def test_hint_names_the_marker_path(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    result = run_hook_with_state({"cwd": str(repo), "prompt": "hello"}, state)
+    monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    marker = design_context.hint_marker(repo)
+    assert str(marker) in result.stdout
+
+
+def test_hint_does_not_touch_marker_itself(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    payload = {"cwd": str(repo), "prompt": "hello"}
+    first = run_hook_with_state(payload, state)
+    second = run_hook_with_state(payload, state)
+    assert "design-md" in first.stdout
+    assert "design-md" in second.stdout  # repeats until the model silences it
+
+
+def test_hint_silenced_by_marker(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    marker = design_context.hint_marker(repo)
+    # hint_marker honors XDG_STATE_HOME from *this* process env, so compute
+    # the marker the way the subprocess will see it.
+    result_env_marker = state / "design-md" / "offered" / marker.name
+    result_env_marker.parent.mkdir(parents=True)
+    result_env_marker.touch()
+    result = run_hook_with_state({"cwd": str(repo), "prompt": "hello"}, state)
     assert result.returncode == 0
     assert result.stdout.strip() == ""
 
@@ -154,11 +172,19 @@ def test_pointer_takes_precedence_over_hint(tmp_path):
 
 def test_hint_marker_is_per_project(tmp_path):
     state = tmp_path / "state"
-    for name in ("repo-a", "repo-b"):
-        repo = tmp_path / name
+    repo_a = tmp_path / "repo-a"
+    repo_b = tmp_path / "repo-b"
+    for repo in (repo_a, repo_b):
         repo.mkdir()
         (repo / ".git").mkdir()
-        result = run_hook_with_state(
-            {"cwd": str(repo), "prompt": "new color scheme for the dashboard"}, state
-        )
-        assert "design-md" in result.stdout, f"hint missing for fresh project {name}"
+    marker_a = design_context.hint_marker(repo_a)
+    marker_b = design_context.hint_marker(repo_b)
+    assert marker_a != marker_b
+    # silencing repo-a leaves repo-b's hint live
+    silenced = state / "design-md" / "offered" / marker_a.name
+    silenced.parent.mkdir(parents=True)
+    silenced.touch()
+    result_a = run_hook_with_state({"cwd": str(repo_a), "prompt": "hi"}, state)
+    result_b = run_hook_with_state({"cwd": str(repo_b), "prompt": "hi"}, state)
+    assert result_a.stdout.strip() == ""
+    assert "design-md" in result_b.stdout
