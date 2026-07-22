@@ -83,7 +83,8 @@ starting, the skill offers once to create one, then drops it if declined.
 Defined in `hooks/hooks.json`. All three detect DESIGN.md by walking up
 from the working directory, stopping at the repository root. Without a
 DESIGN.md the audit hook is fully inert, and the context hook injects only
-a small conditional note on each prompt: the hook does no keyword matching —
+a small conditional note on the first prompt of each session: the hook does
+no keyword matching —
 the model judges from full conversation context whether the request is
 design work, and only then offers `design-md` once. The note names a marker
 file under `$XDG_STATE_HOME/design-md/` that the model touches afterward
@@ -92,7 +93,7 @@ file under `$XDG_STATE_HOME/design-md/` that the model touches afterward
 | Event | Script | Behavior |
 |---|---|---|
 | `SessionStart` | `hooks/scripts/design_context.py` | Injects a one-line pointer: DESIGN.md exists, invoke `using-design` before user-visible work. |
-| `UserPromptSubmit` | `hooks/scripts/design_context.py` | Same pointer, refreshed each prompt. With no DESIGN.md: conditional creation note the model acts on only for design work, self-silenced via marker. |
+| `UserPromptSubmit` | `hooks/scripts/design_context.py` | Same pointer, refreshed each prompt. With no DESIGN.md: once-per-session conditional creation note the model acts on only for design work, permanently self-silenced via marker. |
 | `Stop` | `hooks/scripts/design_audit.py` | If the turn modified files via Edit/Write/NotebookEdit, blocks once with an audit prompt: review the changes against DESIGN.md like a code review, fix or explicitly flag divergences. Does not re-fire on its own continuation. |
 
 ## The template and its extension sections

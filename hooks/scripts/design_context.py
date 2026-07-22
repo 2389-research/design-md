@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 POINTER = (
@@ -51,12 +52,33 @@ def hint_marker(project_root: Path) -> Path:
     return state_home / "design-md" / "offered" / digest
 
 
-def maybe_creation_hint(cwd: Path, prompt: str) -> str | None:
+def session_marker(session_id: str) -> Path:
+    state_home = Path(
+        os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
+    )
+    return state_home / "design-md" / "seen" / session_id
+
+
+def prune_stale_session_markers(seen_dir: Path, max_age_days: int = 7) -> None:
+    cutoff = time.time() - max_age_days * 24 * 3600
+    for entry in seen_dir.iterdir():
+        if entry.is_file() and entry.stat().st_mtime < cutoff:
+            entry.unlink(missing_ok=True)
+
+
+def maybe_creation_hint(cwd: Path, prompt: str, session_id: str) -> str | None:
     if not prompt:
         return None
     marker = hint_marker(find_project_root(cwd))
     if marker.exists():
         return None
+    if session_id:
+        seen = session_marker(session_id)
+        if seen.exists():
+            return None
+        seen.parent.mkdir(parents=True, exist_ok=True)
+        seen.touch()
+        prune_stale_session_markers(seen.parent)
     return CREATION_HINT.format(marker_dir=marker.parent, marker=marker)
 
 
@@ -70,7 +92,9 @@ def main() -> None:
     if design is not None:
         print(POINTER.format(path=design))
         return
-    hint = maybe_creation_hint(cwd, data.get("prompt") or "")
+    hint = maybe_creation_hint(
+        cwd, data.get("prompt") or "", data.get("session_id") or ""
+    )
     if hint:
         print(hint)
 

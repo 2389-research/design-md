@@ -118,7 +118,51 @@ def test_hint_names_the_marker_path(tmp_path, monkeypatch):
     assert str(marker) in result.stdout
 
 
-def test_hint_does_not_touch_marker_itself(tmp_path):
+def test_hint_does_not_touch_permanent_marker_itself(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    # different sessions: hint repeats until the model silences it
+    first = run_hook_with_state({"cwd": str(repo), "prompt": "hello", "session_id": "s1"}, state)
+    second = run_hook_with_state({"cwd": str(repo), "prompt": "hello", "session_id": "s2"}, state)
+    assert "design-md" in first.stdout
+    assert "design-md" in second.stdout
+    monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    assert not design_context.hint_marker(repo).exists()
+
+
+def test_hint_once_per_session(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    payload = {"cwd": str(repo), "prompt": "hello", "session_id": "same-session"}
+    first = run_hook_with_state(payload, state)
+    second = run_hook_with_state(payload, state)
+    assert "design-md" in first.stdout
+    assert second.stdout.strip() == ""
+
+
+def test_stale_session_markers_are_pruned(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    state = tmp_path / "state"
+    seen_dir = state / "design-md" / "seen"
+    seen_dir.mkdir(parents=True)
+    stale = seen_dir / "old-session"
+    stale.touch()
+    week_plus = 8 * 24 * 3600
+    os.utime(stale, (os.path.getmtime(stale) - week_plus,) * 2)
+    fresh = seen_dir / "fresh-session"
+    fresh.touch()
+    run_hook_with_state({"cwd": str(repo), "prompt": "hi", "session_id": "s9"}, state)
+    assert not stale.exists()
+    assert fresh.exists()
+
+
+def test_hint_emitted_every_time_without_session_id(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
     (repo / ".git").mkdir()
@@ -127,7 +171,7 @@ def test_hint_does_not_touch_marker_itself(tmp_path):
     first = run_hook_with_state(payload, state)
     second = run_hook_with_state(payload, state)
     assert "design-md" in first.stdout
-    assert "design-md" in second.stdout  # repeats until the model silences it
+    assert "design-md" in second.stdout
 
 
 def test_hint_silenced_by_marker(tmp_path):
