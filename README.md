@@ -80,14 +80,18 @@ starting, the skill offers once to create one, then drops it if declined.
 
 ## Hooks
 
-Defined in `hooks/hooks.json`. All three are inert when the project has no
-DESIGN.md — they detect the file (walking up from the working directory,
-stopping at the repository root) and exit silently if it's absent.
+Defined in `hooks/hooks.json`. All three detect DESIGN.md by walking up
+from the working directory, stopping at the repository root. Without a
+DESIGN.md the audit hook is fully inert, and the context hook stays silent
+except for a single creation hint: when a prompt looks like visual/UI
+design work, it suggests offering `design-md` once — a marker under
+`$XDG_STATE_HOME/design-md/` ensures the hint never repeats for that
+project.
 
 | Event | Script | Behavior |
 |---|---|---|
 | `SessionStart` | `hooks/scripts/design_context.py` | Injects a one-line pointer: DESIGN.md exists, invoke `using-design` before user-visible work. |
-| `UserPromptSubmit` | `hooks/scripts/design_context.py` | Same pointer, refreshed each prompt. |
+| `UserPromptSubmit` | `hooks/scripts/design_context.py` | Same pointer, refreshed each prompt. With no DESIGN.md: one-time creation hint on design-ish prompts. |
 | `Stop` | `hooks/scripts/design_audit.py` | If the turn modified files via Edit/Write/NotebookEdit, blocks once with an audit prompt: review the changes against DESIGN.md like a code review, fix or explicitly flag divergences. Does not re-fire on its own continuation. |
 
 ## The template and its extension sections
