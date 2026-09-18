@@ -10,7 +10,7 @@ HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 
 def test_hooks_json_is_valid_json():
     data = json.loads(HOOKS_JSON.read_text())
-    assert set(data["hooks"].keys()) == {"SessionStart", "UserPromptSubmit", "Stop"}
+    assert set(data["hooks"].keys()) == {"UserPromptSubmit"}
 
 
 def test_referenced_scripts_exist():

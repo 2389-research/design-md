@@ -1,11 +1,10 @@
-<!-- ABOUTME: README for the design-md Claude Code plugin: create, revise, and enforce a DESIGN.md design system file. -->
-<!-- ABOUTME: Covers what the plugin does, the two skills, hook behavior, installation, repo layout, tests, and license. -->
+<!-- ABOUTME: README for the design-md Claude Code plugin: create, capture, and revise a DESIGN.md design system file. -->
+<!-- ABOUTME: Covers what the plugin does, the skill, the creation-offer hook, installation, repo layout, tests, and license. -->
 
 # design-md
 
 A Claude Code plugin that helps you — especially if you are not a designer —
-create and evolve a `DESIGN.md` design-reference file for your project, and
-then makes sure agents actually use it when building anything user-visible.
+create and evolve a `DESIGN.md` design-reference file for your project.
 
 It works across media: web UI, CLI/TUI output, documents (READMEs, decks,
 one-pagers), and voice/copy. It is not web-only.
@@ -27,19 +26,31 @@ consistent across sessions and contributors.
 
 ## What this plugin does
 
-1. **Create and revise by reaction, not description.** The `design-md`
-   skill never asks you to articulate design in words. It shows you 3-4
-   concretely rendered, genuinely divergent variants and asks you to point
-   at what you like and hate. Your reactions become the tokens and the
-   recorded rationale in DESIGN.md.
-2. **Enforce during building.** The `using-design` skill plus three hooks
-   keep agents loading DESIGN.md before user-visible work, building with
-   token references instead of literal values, and auditing their own
-   output against the file before you see it.
+**Creates the file, by reaction rather than description.** The `design-md`
+skill never asks you to articulate design in words. It shows you 3-4
+concretely rendered, genuinely divergent variants and asks you to point at
+what you like and hate. Your reactions become the tokens and the recorded
+rationale in DESIGN.md.
 
-## The two skills
+**It does not police adherence, on purpose.** An earlier version shipped a
+`using-design` enforcement skill plus pointer and audit hooks. A four-arm
+A/B on a deliberately drifted codebase removed them: an agent with DESIGN.md
+and *no plugin at all* found the file unprompted, surfaced its own judgment
+calls, and introduced zero off-token colors — matching the full enforcement
+stack exactly, while agents without the file introduced one to two. The
+artifact does the work; the enforcement layer did not earn its cost. See
+`evals/results/` for the numbers.
 
-### `design-md` — create or revise DESIGN.md
+## The skill: `design-md`
+
+Three entry states:
+
+- **Create** — no DESIGN.md, no established look worth keeping. Run all four
+  phases.
+- **Capture** — no DESIGN.md but the project already has a visual system in
+  its code. The job is transcription, not invention: read the stylesheets
+  and write down what is already true.
+- **Revise** — DESIGN.md exists and something should change.
 
 Four phases:
 
@@ -57,44 +68,34 @@ Four phases:
   prose where your reactions ARE the rationale ("Don't use gradients —
   user: 'looks like a crypto site'"), then runs the validator.
 
+**Every token must trace to a source** — a rule in the winning variant, or a
+value in the codebase when capturing. Slots with no source are deleted, not
+filled with plausible values: the validator requires only `name`, and an
+invented token is indistinguishable to the next agent from one you chose.
+
 Revision mode never silently rewrites tokens: it renders current vs
 proposed side by side, surfaces ripple effects ("changing `colors.primary`
 affects `components.button-primary`"), and re-validates after every change.
 
-### `using-design` — build against DESIGN.md
+## The hook
 
-Invoked before any work that changes user-visible output:
-
-- **Load** DESIGN.md first. Tokens are law; prose is judgment.
-- **Build with tokens by reference** (CSS custom properties / theme
-  constants named after the tokens), never re-derived approximations.
-- **Self-check before presenting**: diff the output against DESIGN.md
-  (colors, type levels, spacing, radii, Do's and Don'ts, voice, terminal
-  conventions) and fix violations before the user sees the result.
-- **Conform or surface**: if DESIGN.md can't express what's needed, build
-  as close as possible, flag the gap explicitly, and propose a DESIGN.md
-  addition — never improvise silently.
-
-If a project has no DESIGN.md and substantial user-visible work is
-starting, the skill offers once to create one, then drops it if declined.
-
-## Hooks
-
-Defined in `hooks/hooks.json`. All three detect DESIGN.md by walking up
-from the working directory, stopping at the repository root. Without a
-DESIGN.md the audit hook is fully inert, and the context hook injects only
-a small conditional note on the first prompt of each session: the hook does
-no keyword matching —
-the model judges from full conversation context whether the request is
-design work, and only then offers `design-md` once. The note names a marker
-file under `$XDG_STATE_HOME/design-md/` that the model touches afterward
-(accepted or declined), permanently silencing the note for that project.
+One hook, defined in `hooks/hooks.json`, covering the one thing an agent
+cannot discover on its own — a design system that does not exist yet.
 
 | Event | Script | Behavior |
 |---|---|---|
-| `SessionStart` | `hooks/scripts/design_context.py` | Injects a one-line pointer: DESIGN.md exists, invoke `using-design` before user-visible work. |
-| `UserPromptSubmit` | `hooks/scripts/design_context.py` | Same pointer, refreshed each prompt. With no DESIGN.md: once-per-session conditional creation note the model acts on only for design work, permanently self-silenced via marker. |
-| `Stop` | `hooks/scripts/design_audit.py` | If the turn modified files via Edit/Write/NotebookEdit, blocks once with an audit prompt: review the changes against DESIGN.md like a code review, fix or explicitly flag divergences. Does not re-fire on its own continuation. |
+| `UserPromptSubmit` | `hooks/scripts/design_offer.py` | With no DESIGN.md in the repo: injects a small conditional note on the first prompt of each session. Silent whenever a DESIGN.md already exists. |
+
+The hook does no keyword matching. It judges nothing about the prompt — the
+model reads the note and decides from full conversation context whether the
+request is design work, offering `design-md` once if so. The note names a
+marker file under `$XDG_STATE_HOME/design-md/` that the model touches once
+the offer resolves (accepted *or* declined), permanently silencing it for
+that project.
+
+This exists because skill-side discovery measurably fails: in a live test on
+a real site, a full UI-heavy session — colors, cards, masks, an aesthetic
+question asked out loud — never once surfaced DESIGN.md without it.
 
 ## The template and its extension sections
 
@@ -108,7 +109,8 @@ Don'ts). It adds three extension sections, preserved by spec parsers:
 - **Voice & Copy** — tone, error-message style, microcopy rules.
 - **Documents** — README/deck/one-pager aesthetics.
 
-Sections irrelevant to a project's media are deleted during creation.
+Sections irrelevant to a project's media are deleted during creation. So are
+token slots with no source — the template is a menu, not a form.
 
 ## Validator
 
@@ -143,16 +145,14 @@ marketplace that lists it and install from there.
 ## Repository layout
 
 ```
-.claude-plugin/plugin.json      Plugin manifest (design-md, v0.1.0, MIT)
-skills/design-md/SKILL.md       Create/revise skill (Seed → React → Converge → Write)
-skills/using-design/SKILL.md    Enforcement skill (load, build with tokens, self-check)
-hooks/hooks.json                Hook wiring (SessionStart, UserPromptSubmit, Stop)
-hooks/scripts/design_context.py Pointer-injection hook script
-hooks/scripts/design_audit.py   Post-turn conformance audit hook script
+.claude-plugin/plugin.json      Plugin manifest (design-md, v0.2.0, MIT)
+skills/design-md/SKILL.md       Create/capture/revise skill (Seed → React → Converge → Write)
+hooks/hooks.json                Hook wiring (UserPromptSubmit)
+hooks/scripts/design_offer.py   One-time DESIGN.md creation offer
 templates/DESIGN.template.md    Spec-compliant DESIGN.md skeleton + extension sections
 scripts/validate_design.py      DESIGN.md validator
-evals/                          Manually-run acceptance scenarios
-tests/                          pytest suite for hooks and validator
+evals/                          Manually-run acceptance scenarios and recorded results
+tests/                          pytest suite for the hook and validator
 docs/plans/                     Design and implementation plans
 ```
 
@@ -162,9 +162,8 @@ docs/plans/                     Design and implementation plans
 uv run --with pytest --with pyyaml -- pytest tests/ -v
 ```
 
-The `evals/` directory holds three scenario docs (non-designer creation,
-enforcement with a token violation, revision ripple) that are run manually
-against a live Claude Code session with the plugin installed — see
+`evals/` holds scenario docs run manually against a live Claude Code session
+with the plugin installed, plus recorded results from past runs — see
 `evals/README.md`.
 
 ## License

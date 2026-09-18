@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# ABOUTME: Pre-hook for SessionStart and UserPromptSubmit: if the project has a
-# ABOUTME: DESIGN.md, inject a pointer to using-design; if not, inject a small
+# ABOUTME: UserPromptSubmit hook: when a project has no DESIGN.md, inject a
 # ABOUTME: conditional note letting the main model judge whether to offer design-md.
 import hashlib
 import json
@@ -9,17 +8,11 @@ import sys
 import time
 from pathlib import Path
 
-POINTER = (
-    "This project has a design system file: {path}. Before any work that "
-    "changes user-visible output (UI, styling, terminal output, user-facing "
-    "copy), invoke the using-design skill and conform to DESIGN.md."
-)
-
-CREATION_HINT = (
+CREATION_OFFER = (
     "Note (applies to this entire session, remember it): this project has "
     "no DESIGN.md. If the current request — or ANY later request in this "
-    "session — involves visual/UI/design work, offer once to capture design "
-    "intent as an enforceable DESIGN.md via the design-md skill. Whether the "
+    "session — involves visual/UI/design work, offer once to capture the "
+    "design decisions as a DESIGN.md via the design-md skill. Whether the "
     "user accepts or declines, silence this note permanently by running: "
     "mkdir -p {marker_dir} && touch {marker}. For non-design requests, do "
     "not mention this note or touch the marker, but keep it in mind for "
@@ -27,15 +20,15 @@ CREATION_HINT = (
 )
 
 
-def find_design_md(start: Path) -> Path | None:
+def has_design_md(start: Path) -> bool:
+    """True if a DESIGN.md exists at or above `start`, within the repo."""
     current = Path(start).resolve()
     for candidate in [current, *current.parents]:
-        design = candidate / "DESIGN.md"
-        if design.is_file():
-            return design
+        if (candidate / "DESIGN.md").is_file():
+            return True
         if (candidate / ".git").exists():
-            return None
-    return None
+            return False
+    return False
 
 
 def find_project_root(start: Path) -> Path:
@@ -46,7 +39,8 @@ def find_project_root(start: Path) -> Path:
     return current
 
 
-def hint_marker(project_root: Path) -> Path:
+def offer_marker(project_root: Path) -> Path:
+    """Permanent per-project marker: the offer was made and resolved."""
     state_home = Path(
         os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
     )
@@ -55,6 +49,7 @@ def hint_marker(project_root: Path) -> Path:
 
 
 def session_marker(session_id: str) -> Path:
+    """Per-session marker: the note already rode in on this session."""
     state_home = Path(
         os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
     )
@@ -68,10 +63,12 @@ def prune_stale_session_markers(seen_dir: Path, max_age_days: int = 7) -> None:
             entry.unlink(missing_ok=True)
 
 
-def maybe_creation_hint(cwd: Path, prompt: str, session_id: str) -> str | None:
+def maybe_offer(cwd: Path, prompt: str, session_id: str) -> str | None:
     if not prompt:
         return None
-    marker = hint_marker(find_project_root(cwd))
+    if has_design_md(cwd):
+        return None
+    marker = offer_marker(find_project_root(cwd))
     if marker.exists():
         return None
     if session_id:
@@ -81,7 +78,7 @@ def maybe_creation_hint(cwd: Path, prompt: str, session_id: str) -> str | None:
         seen.parent.mkdir(parents=True, exist_ok=True)
         seen.touch()
         prune_stale_session_markers(seen.parent)
-    return CREATION_HINT.format(marker_dir=marker.parent, marker=marker)
+    return CREATION_OFFER.format(marker_dir=marker.parent, marker=marker)
 
 
 def main() -> None:
@@ -90,15 +87,11 @@ def main() -> None:
     except (json.JSONDecodeError, ValueError):
         data = {}
     cwd = Path(data.get("cwd") or Path.cwd())
-    design = find_design_md(cwd)
-    if design is not None:
-        print(POINTER.format(path=design))
-        return
-    hint = maybe_creation_hint(
+    offer = maybe_offer(
         cwd, data.get("prompt") or "", data.get("session_id") or ""
     )
-    if hint:
-        print(hint)
+    if offer:
+        print(offer)
 
 
 if __name__ == "__main__":

@@ -1,35 +1,13 @@
 {
-  "description": "design-md plugin hooks: DESIGN.md pointer injection (SessionStart, UserPromptSubmit) and post-turn design audit (Stop)",
+  "description": "design-md plugin hook: offer DESIGN.md creation once per project when the project has none",
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/design_context.py\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/design_context.py\"",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/design_offer.py\"",
             "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/design_audit.py\"",
-            "timeout": 15
           }
         ]
       }

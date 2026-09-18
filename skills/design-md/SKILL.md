@@ -14,10 +14,23 @@ describe design in words; show them things and let them point.
 
 ## Entry states
 
-- **Create:** no DESIGN.md exists. Run all four phases.
+- **Create:** no DESIGN.md exists and the project has no established look
+  worth keeping. Run all four phases.
+- **Capture:** no DESIGN.md exists but the project already has a visual
+  system in its code. The job is transcription, not invention — read the
+  stylesheets/templates and write down what is already true. Skip the
+  variant gallery; use Phase 2 only to resolve genuine ambiguity (an
+  inconsistency the code cannot settle, e.g. three near-identical greys),
+  rendering current-state options rather than new directions. Phase 4's
+  token-provenance rule is the whole discipline here.
 - **Revise:** DESIGN.md exists and the user wants a change ("darker",
   "less cramped", "new brand color"). Seed = current DESIGN.md + the
   requested change; run Phases 2-4 scoped to what's changing.
+
+Ask which it is when ambiguous. "Set up a DESIGN.md" against a project
+that already renders something is almost always **Capture** — confirm in
+one line ("writing down the system that's there, not redesigning — say
+so if you want a fresh direction") rather than silently redesigning.
 
 ## Phase 1 — Seed (cheap signal before generating anything)
 
@@ -88,6 +101,24 @@ resolve it verbally.
 2. Fill YAML front matter with tokens extracted from the winning
    variant: colors, typography levels, spacing scale, rounded scale,
    component tokens (use `{token.ref}` cross-references).
+
+   **Every token must trace to a source. Never invent a value to fill a
+   template slot.** A token's source is either a value in the winning
+   variant, or — when capturing an existing system — a value in the
+   codebase. The template is a menu, not a form: `validate_design.py`
+   requires only `name`, so **delete any slot you have no source for**
+   rather than supplying a plausible-looking value.
+
+   Before writing, check each token you are about to emit: can you point
+   at the variant rule or source line it came from? If not, it does not
+   go in the file. If the project genuinely needs a token that has no
+   source yet (no error color anywhere, no hover state), say so in prose
+   under the relevant section — "no error color exists yet; pick one
+   before the first failure state ships" — and leave the token out.
+
+   This matters most when capturing an existing system, where the whole
+   job is transcription: a token you invented is indistinguishable, to
+   the next agent, from one the user chose. It will be treated as law.
 3. Fill prose sections. **Every choice gets a one-line why, and user
    reactions ARE the rationale:** "Dense layout: user rejected two airy
    variants as 'too empty'." Rejections go in Do's and Don'ts:
