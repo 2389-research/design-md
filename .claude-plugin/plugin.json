@@ -1,0 +1,16 @@
+{
+  "name": "design-md",
+  "version": "0.2.0",
+  "description": "Create, capture, and revise a DESIGN.md design system file (Google Labs spec-aligned). Extracts design taste from non-designers via react-don't-describe variant loops, and offers once per project to capture design intent when none exists.",
+  "author": {
+    "name": "2389 Research"
+  },
+  "license": "MIT",
+  "keywords": [
+    "design",
+    "design-system",
+    "design-md",
+    "design-tokens",
+    "visual-identity"
+  ]
+}

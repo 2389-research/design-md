@@ -3,6 +3,12 @@
 <!-- ABOUTME: Validated design for the design-md plugin: skills + hooks that create, revise, and enforce a DESIGN.md file. -->
 <!-- ABOUTME: Product of brainstorming session 2026-07-15..20; next step is a writing-plans implementation plan. -->
 
+> **Historical.** "Skill 2: `using-design`" and the pointer/audit hooks below
+> were built, then removed — a four-arm A/B found an agent with DESIGN.md and
+> no plugin matched the full enforcement stack. The enforcement half of this
+> design did not survive contact with evidence; the creation half did. See
+> `evals/results/ab-messy-codebase/` and the README.
+
 ## Problem
 
 AI agents produce visually inconsistent output unless given a persistent design reference. Non-designers — the people most reliant on agents for design — are the least able to articulate what they want in design vocabulary. And even when a design reference exists, agents routinely fail to consult it.
