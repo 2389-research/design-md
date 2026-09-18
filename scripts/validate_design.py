@@ -14,16 +14,32 @@ TOKEN_REF = re.compile(r"\{([a-zA-Z0-9_.\-]+)\}")
 
 FRONT_MATTER_CLOSE = re.compile(r"\n---[ \t]*(?:\r?\n|$)")
 
+# Section aliases from the Google Labs spec (docs/spec.md, "Section Order"):
+# a canonical section and its alias are the same section, so using both is a
+# duplicate even though the heading strings differ.
+SECTION_ALIASES = {
+    "brand & style": "overview",
+    "layout & spacing": "layout",
+    "elevation": "elevation & depth",
+}
+
 
 def split_front_matter(text: str):
+    """Return (raw_front_matter, body, error).
+
+    `raw_front_matter` is None when there is no front matter to parse. The
+    error distinguishes the two ways that happens — absent entirely, versus
+    opened with `---` but never closed — because both previously read as
+    "no front matter" and silently skipped all token validation.
+    """
     if text.startswith("---\r\n") or text.startswith("---\n"):
         text = text.replace("\r\n", "\n")
     else:
-        return None, text
+        return None, text, "missing YAML front matter"
     match = FRONT_MATTER_CLOSE.search(text, 3)
     if match is None:
-        return None, text
-    return text[4 : match.start()], text[match.end() :]
+        return None, text, "front matter is missing closing '---'"
+    return text[4 : match.start()], text[match.end() :], None
 
 
 def resolve(ref: str, data: dict) -> bool:
@@ -48,8 +64,10 @@ def iter_strings(node):
 
 def validate_text(text: str) -> list[str]:
     issues: list[str] = []
-    raw_front, body = split_front_matter(text)
+    raw_front, body, front_matter_error = split_front_matter(text)
     front = None
+    if front_matter_error is not None:
+        issues.append(front_matter_error)
     if raw_front is not None:
         try:
             front = yaml.safe_load(raw_front)
@@ -69,6 +87,7 @@ def validate_text(text: str) -> list[str]:
     seen = set()
     for heading in headings:
         key = heading.strip().lower()
+        key = SECTION_ALIASES.get(key, key)
         if key in seen:
             issues.append(f"duplicate section heading: {heading.strip()}")
         seen.add(key)

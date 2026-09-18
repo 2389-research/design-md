@@ -70,8 +70,9 @@ Four phases:
 
 **Every token must trace to a source** — a rule in the winning variant, or a
 value in the codebase when capturing. Slots with no source are deleted, not
-filled with plausible values: the validator requires only `name`, and an
-invented token is indistinguishable to the next agent from one you chose.
+filled with plausible values: beyond front matter and `name`, the validator
+requires no particular token, and an invented one is indistinguishable to
+the next agent from one you chose.
 
 Revision mode never silently rewrites tokens: it renders current vs
 proposed side by side, surfaces ripple effects ("changing `colors.primary`
@@ -114,9 +115,17 @@ token slots with no source — the template is a menu, not a form.
 
 ## Validator
 
-`scripts/validate_design.py` checks a DESIGN.md for: valid YAML front
-matter, the required `name` field, resolvable `{token.ref}` references, and
-duplicate section headings.
+`scripts/validate_design.py` checks a DESIGN.md for:
+
+- **Front matter is present and closed.** A file with no front matter, or
+  one opened with `---` and never closed, is rejected — both carry no
+  tokens, and the unterminated case previously slipped through as "no front
+  matter" and silently skipped every check below.
+- **Valid YAML mapping** with the required `name` field.
+- **Resolvable `{token.ref}` references.**
+- **No duplicate section headings**, counting the spec's aliases as the same
+  section: `Brand & Style` = `Overview`, `Layout & Spacing` = `Layout`,
+  `Elevation` = `Elevation & Depth`.
 
 ```bash
 uv run --with pyyaml -- python3 scripts/validate_design.py DESIGN.md
@@ -128,7 +137,7 @@ Prints `OK` and exits 0 on success; prints issues and exits 1 otherwise.
 
 **From a marketplace** (if this plugin is listed in one you've added):
 
-```
+```text
 /plugin install design-md@<marketplace-name>
 ```
 
@@ -144,7 +153,7 @@ marketplace that lists it and install from there.
 
 ## Repository layout
 
-```
+```text
 .claude-plugin/plugin.json      Plugin manifest (design-md, v0.2.0, MIT)
 skills/design-md/SKILL.md       Create/capture/revise skill (Seed → React → Converge → Write)
 hooks/hooks.json                Hook wiring (UserPromptSubmit)

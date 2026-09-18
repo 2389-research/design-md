@@ -59,8 +59,17 @@ question is enough.
 ## Phase 2 — React (generate divergent variants)
 
 Generate 3-4 genuinely divergent variants in the project's medium, in a
-scratch directory (`/tmp/design-md-<project>/` or similar). Variants are
-throwaway; only DESIGN.md is ever committed.
+private scratch directory. Variants are throwaway; only DESIGN.md is ever
+committed.
+
+**Create the scratch directory with `mktemp -d` (mode 0700), never a
+predictable path like `/tmp/design-md-<project>/`.** Variants embed real
+project content — nav labels, copy, sometimes real data — and a
+guessable path in a shared `/tmp` is readable by every user on the
+machine and pre-creatable by them. Prefer the project's own ignored
+scratch dir if it has one. Do not copy secrets, credentials, or personal
+data into a variant; substitute realistic stand-ins. Remove the directory
+once the user has converged.
 
 **Web/app UI:** one self-contained HTML file (`gallery.html`, no external
 dependencies, system/web-safe font stacks or embedded @font-face) showing
@@ -94,10 +103,18 @@ resolve it verbally.
 
 ## Phase 4 — Write
 
-1. Copy the plugin's template to `DESIGN.md` at the project root. The
-   template lives at `<plugin-root>/templates/DESIGN.template.md`, where
-   `<plugin-root>` is the parent of the `skills/` directory shown in
-   this skill's base-directory announcement.
+1. **Create and Capture only —** copy the plugin's template to `DESIGN.md`
+   at the project root. The template lives at
+   `<plugin-root>/templates/DESIGN.template.md`, where `<plugin-root>` is
+   the parent of the `skills/` directory shown in this skill's
+   base-directory announcement.
+
+   **Revise — never recopy the template.** Edit the existing `DESIGN.md`
+   in place, touching only the tokens and prose the change actually
+   reaches. Recopying discards every unrelated token, section, and
+   recorded rationale in the file, which is exactly what the revision
+   rules below forbid. If the existing file is missing sections you need,
+   add those sections — do not replace the file to get them.
 2. Fill YAML front matter with tokens extracted from the winning
    variant: colors, typography levels, spacing scale, rounded scale,
    component tokens (use `{token.ref}` cross-references).
@@ -105,9 +122,10 @@ resolve it verbally.
    **Every token must trace to a source. Never invent a value to fill a
    template slot.** A token's source is either a value in the winning
    variant, or — when capturing an existing system — a value in the
-   codebase. The template is a menu, not a form: `validate_design.py`
-   requires only `name`, so **delete any slot you have no source for**
-   rather than supplying a plausible-looking value.
+   codebase. The template is a menu, not a form: beyond front matter and
+   `name`, `validate_design.py` requires no particular token, so **delete
+   any slot you have no source for** rather than supplying a
+   plausible-looking value.
 
    Before writing, check each token you are about to emit: can you point
    at the variant rule or source line it came from? If not, it does not
@@ -138,6 +156,18 @@ resolve it verbally.
   (same gallery/script mechanism, 2 variants) before writing.
 - Surface ripple effects: "changing colors.primary affects
   components.button-primary and the Colors prose."
+- **Check contrast on every changed foreground/background pair before
+  writing.** A token change that alters a pairing — `colors.primary`
+  against `colors.on-primary`, surface against on-surface, any component
+  whose tokens resolve to a new pair — gets its ratio computed and
+  reported with the variant, not after. Flag anything under 4.5:1 for
+  body text (3:1 for large text) as failing, and say so while the user
+  can still pick a different value. If DESIGN.md records its own contrast
+  rule, a proposal that breaks it is not a candidate — rule it out and
+  explain why rather than offering it.
+- Check whether the change collides with a rule the file already states
+  (a Don't, a documented separation between two colors). Surface the
+  collision; do not quietly amend a rule the user set.
 - Preserve existing rationale lines unless the user's new reaction
   contradicts them — then update the rationale, citing the new reaction.
 - Re-run the validator after every revision.

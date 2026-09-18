@@ -56,8 +56,47 @@ def test_duplicate_section_headings_rejected():
     assert any("duplicate" in issue.lower() for issue in check(text))
 
 
-def test_no_front_matter_is_allowed():
-    assert check("# Just prose\n\n## Overview\n\nWords.\n") == []
+def test_no_front_matter_is_an_issue():
+    # A DESIGN.md with no front matter carries no tokens, so it is not a
+    # usable design system — it must not validate as compliant.
+    issues = check("# Just prose\n\n## Overview\n\nWords.\n")
+    assert any("front matter" in issue.lower() for issue in issues)
+
+
+def test_unterminated_front_matter_is_an_issue():
+    # An opening --- with no closing fence previously read as "no front
+    # matter", silently bypassing YAML and name validation.
+    text = '---\nname: Acme\ncolors:\n  primary: "#fff"\n\n# no closing fence\n'
+    issues = check(text)
+    assert any("closing" in issue.lower() for issue in issues)
+
+
+def test_unterminated_front_matter_is_distinct_from_absent():
+    unterminated = check('---\nname: Acme\n\n# no closing fence\n')
+    absent = check("# Just prose\n\n## Overview\n\nWords.\n")
+    assert unterminated != absent
+
+
+def test_alias_heading_duplicates_canonical_section():
+    # Spec (docs/spec.md): Overview is also "Brand & Style", Layout is also
+    # "Layout & Spacing", Elevation & Depth is also "Elevation".
+    text = VALID + "\n## Brand & Style\n\nAgain, under its alias.\n"
+    assert any("duplicate" in issue.lower() for issue in check(text))
+
+
+def test_layout_alias_duplicates_canonical_section():
+    text = VALID + "\n## Layout\n\nGrid.\n\n## Layout & Spacing\n\nAgain.\n"
+    assert any("duplicate" in issue.lower() for issue in check(text))
+
+
+def test_elevation_alias_duplicates_canonical_section():
+    text = VALID + "\n## Elevation & Depth\n\nFlat.\n\n## Elevation\n\nAgain.\n"
+    assert any("duplicate" in issue.lower() for issue in check(text))
+
+
+def test_distinct_sections_are_not_duplicates():
+    text = VALID + "\n## Layout\n\nGrid.\n\n## Shapes\n\nRounded.\n"
+    assert not any("duplicate" in issue.lower() for issue in check(text))
 
 
 def test_dashes_line_inside_front_matter_does_not_terminate_it():
