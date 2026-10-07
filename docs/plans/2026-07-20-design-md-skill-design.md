@@ -1,7 +1,13 @@
 # design-md Plugin — Design
 
-<!-- ABOUTME: Validated design for the design-md plugin: skills + hooks that create, revise, and enforce a DESIGN.md file. -->
+<!-- ABOUTME: Historical design for the design-md plugin: skills + hooks to create, revise, and enforce a DESIGN.md file; the enforcement half was later removed. -->
 <!-- ABOUTME: Product of brainstorming session 2026-07-15..20; next step is a writing-plans implementation plan. -->
+
+> **Historical.** "Skill 2: `using-design`" and the pointer/audit hooks below
+> were built, then removed — a four-arm A/B found an agent with DESIGN.md and
+> no plugin matched the full enforcement stack. The enforcement half of this
+> design did not survive contact with evidence; the creation half did. See
+> `evals/results/ab-messy-codebase/` and the README.
 
 ## Problem
 

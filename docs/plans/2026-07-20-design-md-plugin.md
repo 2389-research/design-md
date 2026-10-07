@@ -1,5 +1,12 @@
 # design-md Plugin Implementation Plan
 
+> **Historical.** This plan was executed as written, then partly reversed.
+> The enforcement half — the `using-design` skill, the DESIGN.md-exists
+> pointer hook, and the Stop audit hook — was removed after a four-arm A/B
+> showed an agent with DESIGN.md and no plugin matched the full enforcement
+> stack exactly. Tasks 3 (pointer branch), 4, and 8 no longer describe the
+> shipped plugin. See `evals/results/ab-messy-codebase/` and the README.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Build the `design-md` Claude Code plugin: two skills (`design-md` create/revise, `using-design` enforcement), pre/post hooks, a spec-compliant DESIGN.md template, a validator, and scenario evals.

@@ -1,0 +1,16 @@
+{
+  "description": "design-md plugin hook: offer DESIGN.md creation once per project when the project has none",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/design_offer.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
