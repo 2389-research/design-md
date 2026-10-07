@@ -1,6 +1,6 @@
 # design-md Plugin — Design
 
-<!-- ABOUTME: Validated design for the design-md plugin: skills + hooks that create, revise, and enforce a DESIGN.md file. -->
+<!-- ABOUTME: Historical design for the design-md plugin: skills + hooks to create, revise, and enforce a DESIGN.md file; the enforcement half was later removed. -->
 <!-- ABOUTME: Product of brainstorming session 2026-07-15..20; next step is a writing-plans implementation plan. -->
 
 > **Historical.** "Skill 2: `using-design`" and the pointer/audit hooks below

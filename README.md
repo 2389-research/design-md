@@ -26,20 +26,50 @@ consistent across sessions and contributors.
 
 ## What this plugin does
 
-**Creates the file, by reaction rather than description.** The `design-md`
+**It creates the file, by reaction rather than description.** The `design-md`
 skill never asks you to articulate design in words. It shows you 3-4
 concretely rendered, genuinely divergent variants and asks you to point at
 what you like and hate. Your reactions become the tokens and the recorded
 rationale in DESIGN.md.
 
-**It does not police adherence, on purpose.** An earlier version shipped a
-`using-design` enforcement skill plus pointer and audit hooks. A four-arm
-A/B on a deliberately drifted codebase removed them: an agent with DESIGN.md
-and *no plugin at all* found the file unprompted, surfaced its own judgment
-calls, and introduced zero off-token colors — matching the full enforcement
-stack exactly, while agents without the file introduced one to two. The
-artifact does the work; the enforcement layer did not earn its cost. See
-`evals/results/` for the numbers.
+That is the whole scope: **write the artifact, then get out of the way.**
+
+## What it does not do: enforce
+
+**There is no enforcer. Nothing in this plugin checks your work against
+DESIGN.md, and that is deliberate.**
+
+Once DESIGN.md exists at your project root, keeping output consistent is the
+file's job, not a plugin's. Agents read it on their own.
+
+An earlier version did ship an enforcement half — a `using-design` skill that
+loaded the file and self-checked before presenting, a hook that injected a
+pointer whenever a DESIGN.md existed, and a Stop hook that audited every turn
+touching user-visible output. A four-arm A/B on a deliberately drifted
+codebase deleted all three. Off-token colors introduced while adding the same
+feature:
+
+| Arm | DESIGN.md | Plugin | Off-token colors |
+|---|---|---|---|
+| No instruction | no | no | 1 |
+| "Keep it consistent with the existing styles" | no | no | **2** (both invented) |
+| DESIGN.md only | **yes** | no | **0** |
+| DESIGN.md + full enforcement stack | yes | yes | **0** |
+
+An agent with DESIGN.md and *no plugin loaded at all* found the file
+unprompted off a plain directory listing, surfaced its own judgment calls
+without being asked, and resolved a token conflict more strictly than the
+enforcement stack did — at roughly a third of the cost. The artifact does the
+work; the enforcement layer did not earn its keep.
+
+Note the second row: a vague instruction was **worse than saying nothing**.
+"Be consistent" has no referent when the codebase itself is inconsistent, so
+it licenses plausible-looking invention. A written token list is a referent.
+That is the mechanism this plugin sells, and it is also why the file matters
+most on young or drifted projects and least on already-disciplined ones,
+where imitating the surrounding code is enough.
+
+Full numbers and caveats: `evals/results/ab-messy-codebase/2026-09-18.md`.
 
 ## The skill: `design-md`
 
@@ -160,7 +190,9 @@ hooks/hooks.json                Hook wiring (UserPromptSubmit)
 hooks/scripts/design_offer.py   One-time DESIGN.md creation offer
 templates/DESIGN.template.md    Spec-compliant DESIGN.md skeleton + extension sections
 scripts/validate_design.py      DESIGN.md validator
-evals/                          Manually-run acceptance scenarios and recorded results
+evals/scenarios/                Manually-run acceptance scenarios
+evals/fixtures/                 Seeded starting states the scenarios need
+evals/results/                  Recorded results from past runs
 tests/                          pytest suite for the hook and validator
 docs/plans/                     Design and implementation plans
 ```
